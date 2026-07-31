@@ -1,7 +1,8 @@
-local tabline = require("buffer-list.ui.tabline")
 local infra = require("buffer-list.infrastructure")
 local buffer = require("buffer-list.buffer")
+
 local name_parser = require("buffer-list.ui.name-parser")
+local tabline = require("buffer-list.ui.tabline")
 
 local M = {}
 

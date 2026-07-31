@@ -35,4 +35,22 @@ describe("UI Module", function()
     local expected = "%#TabLineFill#   awesome.lua   %#TabLineSel#   test.lua   %#NONE#"
     assert.are.equal(ui.generateTabline(), expected)
   end)
+
+  describe("Name Conflict Resolution", function()
+    it("should resolve conflict using first differing directory component (Example 1)", function()
+      buffer.add(1, "/home/test/project/file.lua")
+      buffer.add(2, "/home/exam/project/file.lua")
+
+      local expected = "%#TabLineFill#   test/file.lua   %#TabLineFill#   exam/file.lua   %#NONE#"
+      assert.are.equal(ui.generateTabline(), expected)
+    end)
+
+    it("should resolve conflict using first differing directory component (Example 2)", function()
+      buffer.add(1, "/home/agua/project/test/file.lua")
+      buffer.add(2, "/home/rosa/project/exam/file.lua")
+
+      local expected = "%#TabLineFill#   agua/file.lua   %#TabLineFill#   rosa/file.lua   %#NONE#"
+      assert.are.equal(ui.generateTabline(), expected)
+    end)
+  end)
 end)
