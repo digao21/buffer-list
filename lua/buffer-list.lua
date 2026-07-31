@@ -1,9 +1,9 @@
-local render = require("buffer-list.render")
+local ui = require("buffer-list.ui")
 
 local M = {}
 
 M.setup = function()
-  render.setup()
+  ui.setup()
 end
 
 return M

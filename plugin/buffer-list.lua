@@ -1,5 +1,5 @@
 local command = require("buffer-list.command")
-local render = require("buffer-list.render")
+local ui = require("buffer-list.ui")
 
 local augroup_id = vim.api.nvim_create_augroup("BufferListAutoCmds", { clear = true })
 
@@ -24,7 +24,7 @@ vim.api.nvim_create_autocmd({ "BufEnter" }, {
   end,
 })
 
-_G.BufferListTabline = render.generateTabline
+_G.BufferListTabline = ui.generateTabline
 -- luacheck: push ignore 122
 vim.o.tabline = "%!v:lua.BufferListTabline()"
 vim.o.showtabline = 2
