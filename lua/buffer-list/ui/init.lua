@@ -1,38 +1,23 @@
-local buffer = require("buffer-list.buffer")
+local tabline = require("buffer-list.ui.tabline")
 local infra = require("buffer-list.infrastructure")
+local buffer = require("buffer-list.buffer")
 
-local PAD = string.rep(" ", 3)
+local function parseBuffers(buffers)
+  local parsed_buffers = {}
+
+  for _, buff in ipairs(buffers) do
+    table.insert(parsed_buffers, { id = buff.id, name = infra.getFilename(buff.path) })
+  end
+
+  return parsed_buffers
+end
 
 local M = {}
 
-local has_initialize
---- Ensure default highlights exist
-local function setupHighlights()
-  infra.createHighligh("MyTabInactive", { link = "TabLineFill", default = true })
-  infra.createHighligh("MyTabActive", { link = "TabLineSel", default = true })
-  infra.createHighligh("MyTabFill", { bg = "NONE", default = true })
-  has_initialize = true
-end
-
---- Generate the tabline string
----@return string
-function M.generateTabline()
-  if not has_initialize then
-    setupHighlights()
-  end
-
-  local buffers = buffer.getBuffers()
+M.generateTabline = function()
+  local buffers = parseBuffers(buffer.getBuffers())
   local active_id = buffer.getActive()
-  local parts = {}
-
-  for _, buf in ipairs(buffers) do
-    local filename = infra.getFilename(buf.path)
-    local hl = (buf.id == active_id) and "%#MyTabActive#" or "%#MyTabInactive#"
-    table.insert(parts, hl .. PAD .. filename .. PAD)
-  end
-
-  table.insert(parts, "%#MyTabFill#")
-  return table.concat(parts, "")
+  return tabline.generateTabline(active_id or 0, buffers)
 end
 
 return M
