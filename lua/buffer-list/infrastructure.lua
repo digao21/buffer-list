@@ -1,3 +1,5 @@
+local SEP = package.config:sub(1,1)
+
 local M = {}
 
 --- Check if a buffer handle is valid in Neovim
@@ -22,7 +24,7 @@ function M.isBuflisted(buf_nr)
   return vim.bo[buf_nr].buflisted
 end
 
---- Get buffer name
+--- Get buffer path
 ---@param buf_nr number
 ---@return string
 function M.getBufPath(buf_nr)
@@ -112,6 +114,13 @@ function M.deleteBuffer(buf_nr)
 
   vim.api.nvim_buf_delete(buf_nr, { force = false })
   return true
+end
+
+--- Split file pathname into an array using OS standard separator
+--- @param path string
+--- @return string[]
+function M.splitPath(path)
+  return vim.split(path, SEP, { plain = true })
 end
 
 --- Force Neovim to redraw tabline UI
