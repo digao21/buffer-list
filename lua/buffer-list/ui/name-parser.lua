@@ -86,15 +86,14 @@ local function resolveConflictGroup(items, depth, prefix)
 end
 
 --- Transform the file path into the file name, resolving name conflicts
---- @param buffers { id: number, path: string }[]
---- @param splitPath fun(path: string): string[]
+--- @param buffers { id: number, path: string[] }[]
 --- @return { id: number, name: string }[]
-M.parseBuffers = function(buffers, splitPath)
+M.parseBuffers = function(buffers)
   local items = {}
   local name_groups = {}
 
   for _, buff in ipairs(buffers) do
-    local file_path = splitPath(buff.path or "")
+    local file_path = buff.path
     local raw_name = file_path[#file_path]
     local filename = (raw_name and raw_name ~= "") and raw_name or "[No Name]"
 
