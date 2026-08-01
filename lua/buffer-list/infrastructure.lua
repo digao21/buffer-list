@@ -1,4 +1,4 @@
-local SEP = package.config:sub(1, 1)
+local config = require("buffer-list.config")
 
 local M = {}
 
@@ -120,7 +120,7 @@ end
 --- @param path string
 --- @return string[]
 function M.splitPath(path)
-  return vim.split(path, SEP, { plain = true })
+  return vim.split(path, config.SEP, { plain = true })
 end
 
 --- Force Neovim to redraw tabline UI

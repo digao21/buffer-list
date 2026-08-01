@@ -25,6 +25,7 @@ A Neovim plugin to manage and track active buffers in real time.
 ## Module Overview
 
 - `lua/buffer-list.lua`: Main entry point module exposing `setup()`.
+- `lua/buffer-list/config.lua`: Provides central configuration constants (file separator `SEP`, highlights `hl_active_item`, `hl_inactive_item`, `hl_autofill`).
 - `lua/buffer-list/infrastructure.lua`: Wraps Neovim API calls (`vim.api`, `vim.bo`, `vim.cmd.redrawtabline`, `vim.api.nvim_win_*`, `deleteBuffer`).
 - `lua/buffer-list/buffer.lua`: Maintains internal list of active listed buffers (`{ id = number, path = string, win = number|nil }`), tracks current active buffer ID (`setActive`/`getActive`), manages associated window handles (`setWindow`/`getWindow`), finds adjacent buffers (`getAdjacentBuffer`), and swaps buffer positions (`swapBuffer`).
 - `lua/buffer-list/ui/init.lua`: Generates the tabline string (`_G.BufferListTabline`) and sets up default highlights.

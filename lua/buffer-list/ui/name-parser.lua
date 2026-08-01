@@ -1,4 +1,4 @@
-local SEP = package.config:sub(1, 1)
+local config = require("buffer-list.config")
 
 local M = {}
 
@@ -48,7 +48,7 @@ local function resolveConflictGroup(items, depth, prefix)
     local new_prefix = prefix
     if dir_comp then
       if new_prefix ~= "" then
-        new_prefix = new_prefix .. SEP .. dir_comp
+        new_prefix = new_prefix .. config.SEP .. dir_comp
       else
         new_prefix = dir_comp
       end
@@ -57,7 +57,7 @@ local function resolveConflictGroup(items, depth, prefix)
     if #group == 1 then
       local item = group[1]
       if new_prefix ~= "" then
-        item.name = new_prefix .. SEP .. item.filename
+        item.name = new_prefix .. config.SEP .. item.filename
       else
         item.name = item.filename
       end
@@ -75,7 +75,7 @@ local function resolveConflictGroup(items, depth, prefix)
       else
         for _, item in ipairs(group) do
           if new_prefix ~= "" then
-            item.name = new_prefix .. SEP .. item.filename
+            item.name = new_prefix .. config.SEP .. item.filename
           else
             item.name = item.filename
           end
