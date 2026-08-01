@@ -1,5 +1,5 @@
 local buffer = require("buffer-list.buffer")
-local util = require("buffer-list.util")
+local array = require("buffer-list.util.array")
 
 describe("Plugin Autocommands Integration", function()
   before_each(function()
@@ -13,11 +13,11 @@ describe("Plugin Autocommands Integration", function()
 
     -- Trigger BufAdd autocommand event explicitly or let Neovim trigger it
     vim.api.nvim_exec_autocmds("BufAdd", { buffer = buf_nr })
-    assert.is_true(util.contains(buffer.getBuffers(), buf_nr))
+    assert.is_true(array.contains(buffer.getBuffers(), buf_nr))
 
     -- Trigger BufDelete autocommand event
     vim.api.nvim_exec_autocmds("BufDelete", { buffer = buf_nr })
-    assert.is_false(util.contains(buffer.getBuffers(), buf_nr))
+    assert.is_false(array.contains(buffer.getBuffers(), buf_nr))
 
     vim.api.nvim_buf_delete(buf_nr, { force = true })
   end)

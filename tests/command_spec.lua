@@ -1,6 +1,6 @@
 local buffer = require("buffer-list.buffer")
 local command = require("buffer-list.command")
-local util = require("buffer-list.util")
+local array = require("buffer-list.util.array")
 
 describe("Command Module", function()
   before_each(function()
@@ -13,7 +13,7 @@ describe("Command Module", function()
 
     local path = vim.api.nvim_buf_get_name(buf_nr)
     assert.are.same(buffer.getBuffers(), { { id = buf_nr, path = path } })
-    assert.is_true(util.contains(buffer.getBuffers(), buf_nr))
+    assert.is_true(array.contains(buffer.getBuffers(), buf_nr))
 
     vim.api.nvim_buf_delete(buf_nr, { force = true })
   end)
@@ -22,7 +22,7 @@ describe("Command Module", function()
     local buf_nr = vim.api.nvim_create_buf(false, false)
     command.onBufAdd({ buf = buf_nr })
 
-    assert.is_false(util.contains(buffer.getBuffers(), buf_nr))
+    assert.is_false(array.contains(buffer.getBuffers(), buf_nr))
 
     vim.api.nvim_buf_delete(buf_nr, { force = true })
   end)
@@ -36,10 +36,10 @@ describe("Command Module", function()
   it("should handle onBufDelete when buffer is deleted", function()
     local buf_nr = vim.api.nvim_create_buf(true, false)
     command.onBufAdd({ buf = buf_nr })
-    assert.is_true(util.contains(buffer.getBuffers(), buf_nr))
+    assert.is_true(array.contains(buffer.getBuffers(), buf_nr))
 
     command.onBufDelete({ buf = buf_nr })
-    assert.is_false(util.contains(buffer.getBuffers(), buf_nr))
+    assert.is_false(array.contains(buffer.getBuffers(), buf_nr))
 
     vim.api.nvim_buf_delete(buf_nr, { force = true })
   end)

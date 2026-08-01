@@ -1,4 +1,4 @@
-local util = require("buffer-list.util")
+local array = require("buffer-list.util.array")
 
 local M = {}
 
@@ -77,7 +77,7 @@ function M.add(buf_nr, path)
   if not buf_nr or buf_nr <= 0 then
     return false
   end
-  local is_present = util.contains(managed_buffers, buf_nr)
+  local is_present = array.contains(managed_buffers, buf_nr)
   if not is_present then
     table.insert(managed_buffers, { id = buf_nr, path = path or "" })
     return true
@@ -95,7 +95,7 @@ function M.remove(buf_nr)
   if active_buffer == buf_nr then
     active_buffer = nil
   end
-  local is_present, index = util.contains(managed_buffers, buf_nr)
+  local is_present, index = array.contains(managed_buffers, buf_nr)
   if is_present and index then
     table.remove(managed_buffers, index)
     return true

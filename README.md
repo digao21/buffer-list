@@ -30,7 +30,7 @@ A Neovim plugin to manage and track active buffers in real time.
 - `lua/buffer-list/buffer.lua`: Maintains internal list of active listed buffers (`{ id = number, path = string, win = number|nil }`), tracks current active buffer ID (`setActive`/`getActive`), manages associated window handles (`setWindow`/`getWindow`), finds adjacent buffers (`getAdjacentBuffer`), and swaps buffer positions (`swapBuffer`).
 - `lua/buffer-list/ui/init.lua`: Generates the tabline string (`_G.BufferListTabline`) and sets up default highlights.
 - `lua/buffer-list/ui/name-parser.lua`: Transforms buffer paths into display names, automatically resolving filename conflicts using path directory components.
-- `lua/buffer-list/util.lua`: Provides generic helper utilities such as `util.contains`.
+- `lua/buffer-list/util/array.lua`: Provides array/list helper utilities such as `array.contains`.
 - `lua/buffer-list/command.lua`: Event handlers for autocommand events, user commands (`moveRight`/`moveLeft`, `swapRight`/`swapLeft`, `delete`), window tracking, and buffer lifecycle logic.
 - `plugin/buffer-list.lua`: Registers autocommands, `:BufferList` user command, initializes the plugin, and binds the tabline renderer.
 

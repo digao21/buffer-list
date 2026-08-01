@@ -1,5 +1,5 @@
 local buffer = require("buffer-list.buffer")
-local util = require("buffer-list.util")
+local array = require("buffer-list.util.array")
 
 describe("Buffer Module", function()
   before_each(function()
@@ -43,8 +43,8 @@ describe("Buffer Module", function()
 
   it("should check if buffer list contains a buffer", function()
     buffer.add(10, "/path/file10.lua")
-    assert.is_true(util.contains(buffer.getBuffers(), 10))
-    assert.is_false(util.contains(buffer.getBuffers(), 20))
+    assert.is_true(array.contains(buffer.getBuffers(), 10))
+    assert.is_false(array.contains(buffer.getBuffers(), 20))
   end)
 
   it("should remove existing buffers", function()
