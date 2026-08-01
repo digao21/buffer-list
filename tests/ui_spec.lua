@@ -52,5 +52,41 @@ describe("UI Module", function()
       local expected = "%#TabLineFill#   agua/file.lua   %#TabLineFill#   rosa/file.lua   %#NONE#"
       assert.are.equal(ui.generateTabline(), expected)
     end)
+
+    it("should resolve conflict for multiple unnamed buffers (Example 3)", function()
+      buffer.add(1, "")
+      buffer.add(2, "")
+
+      local expected = "%#TabLineFill#   [No Name] 1   %#TabLineFill#   [No Name] 2   %#NONE#"
+      assert.are.equal(ui.generateTabline(), expected)
+    end)
+
+    it("should resolve conflict when one file has shorter path (Example 4)", function()
+      buffer.add(1, "/home/file.lua")
+      buffer.add(2, "/home/rosa/file.lua")
+
+      local expected = "%#TabLineFill#   file.lua   %#TabLineFill#   rosa/file.lua   %#NONE#"
+      assert.are.equal(ui.generateTabline(), expected)
+    end)
+
+    it("should resolve conflict for 3 files with unique directory component (Example 5.1)", function()
+      buffer.add(1, "/home/agua/project/test/file.lua")
+      buffer.add(2, "/home/rosa/project/exam/file.lua")
+      buffer.add(3, "/home/pata/project/exam/file.lua")
+
+      local expected =
+        "%#TabLineFill#   agua/file.lua   %#TabLineFill#   rosa/file.lua   %#TabLineFill#   pata/file.lua   %#NONE#"
+      assert.are.equal(ui.generateTabline(), expected)
+    end)
+
+    it("should resolve conflict for 3 files with branching directories (Example 5.2)", function()
+      buffer.add(1, "/home/agua/project/test/file.lua")
+      buffer.add(2, "/home/rosa/git/exam/file.lua")
+      buffer.add(3, "/home/rosa/scm/exam/file.lua")
+
+      local expected =
+        "%#TabLineFill#   agua/file.lua   %#TabLineFill#   rosa/git/file.lua   %#TabLineFill#   rosa/scm/file.lua   %#NONE#"
+      assert.are.equal(ui.generateTabline(), expected)
+    end)
   end)
 end)

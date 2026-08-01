@@ -2,6 +2,89 @@ local SEP = package.config:sub(1, 1)
 
 local M = {}
 
+--- Recursively resolve filename conflict for a group of items with the same filename.
+--- @param items table[] List of item tables with { filename, dirs }
+--- @param depth number Current directory component index (1-based)
+--- @param prefix string Accumulated directory prefix for this subgroup
+local function resolveConflictGroup(items, depth, prefix)
+  while true do
+    local all_have_same = true
+    local first_dir = nil
+    for i, item in ipairs(items) do
+      local d = item.dirs[depth]
+      if i == 1 then
+        first_dir = d
+      else
+        if d ~= first_dir then
+          all_have_same = false
+          break
+        end
+      end
+    end
+
+    if all_have_same and first_dir ~= nil then
+      depth = depth + 1
+    else
+      break
+    end
+  end
+
+  local subgroups = {}
+  local subgroup_keys = {}
+  for _, item in ipairs(items) do
+    local dir_comp = item.dirs[depth]
+    local key = dir_comp or "__NIL__"
+    if not subgroups[key] then
+      subgroups[key] = {}
+      table.insert(subgroup_keys, key)
+    end
+    table.insert(subgroups[key], item)
+  end
+
+  for _, key in ipairs(subgroup_keys) do
+    local group = subgroups[key]
+    local dir_comp = (key ~= "__NIL__") and key or nil
+
+    local new_prefix = prefix
+    if dir_comp then
+      if new_prefix ~= "" then
+        new_prefix = new_prefix .. SEP .. dir_comp
+      else
+        new_prefix = dir_comp
+      end
+    end
+
+    if #group == 1 then
+      local item = group[1]
+      if new_prefix ~= "" then
+        item.name = new_prefix .. SEP .. item.filename
+      else
+        item.name = item.filename
+      end
+    else
+      local can_advance = false
+      for _, item in ipairs(group) do
+        if item.dirs[depth + 1] ~= nil then
+          can_advance = true
+          break
+        end
+      end
+
+      if can_advance then
+        resolveConflictGroup(group, depth + 1, new_prefix)
+      else
+        for _, item in ipairs(group) do
+          if new_prefix ~= "" then
+            item.name = new_prefix .. SEP .. item.filename
+          else
+            item.name = item.filename
+          end
+        end
+      end
+    end
+  end
+end
+
 --- Transform the file path into the file name, resolving name conflicts
 --- @param buffers { id: number, path: string }[]
 --- @param splitPath fun(path: string): string[]
@@ -38,56 +121,18 @@ M.parseBuffers = function(buffers, splitPath)
   end
 
   for filename, group in pairs(name_groups) do
-    if #group == 1 or filename == "[No Name]" then
-      for _, item in ipairs(group) do
-        item.name = filename
+    if filename == "[No Name]" then
+      if #group == 1 then
+        group[1].name = filename
+      else
+        for i, item in ipairs(group) do
+          item.name = filename .. " " .. i
+        end
       end
+    elseif #group == 1 then
+      group[1].name = filename
     else
-      local unresolved = {}
-      local max_dirs = 0
-
-      for _, item in ipairs(group) do
-        table.insert(unresolved, item)
-        if #item.dirs > max_dirs then
-          max_dirs = #item.dirs
-        end
-      end
-
-      for depth = 1, max_dirs do
-        if #unresolved == 0 then
-          break
-        end
-
-        local counts = {}
-        for _, item in ipairs(unresolved) do
-          local dir_comp = item.dirs[depth]
-          if dir_comp then
-            local cand = dir_comp .. SEP .. filename
-            counts[cand] = (counts[cand] or 0) + 1
-          end
-        end
-
-        local next_unresolved = {}
-        for _, item in ipairs(unresolved) do
-          local dir_comp = item.dirs[depth]
-          local cand = dir_comp and (dir_comp .. SEP .. filename) or nil
-          if cand and counts[cand] == 1 then
-            item.name = cand
-          else
-            table.insert(next_unresolved, item)
-          end
-        end
-        unresolved = next_unresolved
-      end
-
-      for _, item in ipairs(unresolved) do
-        local fallback_dir = #item.dirs > 0 and item.dirs[#item.dirs] or nil
-        if fallback_dir then
-          item.name = fallback_dir .. SEP .. filename
-        else
-          item.name = filename
-        end
-      end
+      resolveConflictGroup(group, 1, "")
     end
   end
 

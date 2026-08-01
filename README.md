@@ -10,7 +10,7 @@ A Neovim plugin to manage and track active buffers in real time.
 - **Window Stickiness**: Remembers the last window each buffer was opened in and reuses that window handle when navigating back to it (falling back gracefully to the current window if closed).
 - **Cursor Window Preservation**: Preserves focus on the active window when a buffer is opened in a different target window.
 - **Buffer Reordering**: Swap positions of adjacent buffers in the list using `:BufferList swap-right` and `:BufferList swap-left`.
-- **Name Conflict Resolution**: Automatically resolves conflicting filenames by prefixing the first differing directory component from the path using the OS file separator.
+- **Name Conflict Resolution**: Automatically resolves conflicting filenames by prefixing directory components from the path using the OS file separator, supporting multi-level nested directory conflicts and numbered unnamed buffers (`[No Name] 1`, `[No Name] 2`).
 - **Decoupled Architecture**: Strictly separates Neovim API bindings (`infrastructure.lua`), buffer state storage (`buffer.lua`), tabline rendering (`ui/init.lua`), and event handling (`command.lua`).
 
 
