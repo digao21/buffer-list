@@ -120,19 +120,22 @@ M.parseBuffers = function(buffers)
   end
 
   for filename, group in pairs(name_groups) do
-    if filename == "[No Name]" then
-      if #group == 1 then
-        group[1].name = filename
-      else
-        for i, item in ipairs(group) do
-          item.name = filename .. " " .. i
-        end
-      end
-    elseif #group == 1 then
+    if #group == 1 then
       group[1].name = filename
-    else
-      resolveConflictGroup(group, 1, "")
+      goto continue
     end
+
+    if filename == "[No Name]" then
+      for i, item in ipairs(group) do
+        item.name = filename .. " " .. i
+      end
+
+      goto continue
+    end
+
+    resolveConflictGroup(group, 1, "")
+
+    ::continue::
   end
 
   local parsed_buffers = {}

@@ -1,12 +1,9 @@
 local name_parser = require("buffer-list.ui.name-parser")
-local infrastructure = require("buffer-list.infrastructure")
 
 describe("Name Parser Module", function()
-  local splitPath = infrastructure.splitPath
-
   it("should extract filename for single buffer", function()
     local buffers = {
-      { id = 1, path = splitPath("/home/user/project/awesome.lua") },
+      { id = 1, path = { "", "home", "user", "project", "awesome.lua" } },
     }
 
     local result = name_parser.parseBuffers(buffers)
@@ -18,7 +15,7 @@ describe("Name Parser Module", function()
 
   it("should handle empty path as [No Name]", function()
     local buffers = {
-      { id = 1, path = splitPath("") },
+      { id = 1, path = { "" } },
     }
 
     local result = name_parser.parseBuffers(buffers)
@@ -30,8 +27,8 @@ describe("Name Parser Module", function()
 
   it("should number multiple unnamed buffers (Example 3)", function()
     local buffers = {
-      { id = 1, path = splitPath("") },
-      { id = 2, path = splitPath("") },
+      { id = 1, path = { "" } },
+      { id = 2, path = { "" } },
     }
 
     local result = name_parser.parseBuffers(buffers)
@@ -45,8 +42,8 @@ describe("Name Parser Module", function()
   describe("Name Conflict Resolution", function()
     it("should resolve conflict using first differing directory component (Example 1)", function()
       local buffers = {
-        { id = 1, path = splitPath("/home/test/project/file.lua") },
-        { id = 2, path = splitPath("/home/exam/project/file.lua") },
+        { id = 1, path = { "", "home", "test", "project", "file.lua" } },
+        { id = 2, path = { "", "home", "exam", "project", "file.lua" } },
       }
 
       local result = name_parser.parseBuffers(buffers)
@@ -59,8 +56,8 @@ describe("Name Parser Module", function()
 
     it("should resolve conflict using first differing directory component (Example 2)", function()
       local buffers = {
-        { id = 1, path = splitPath("/home/agua/project/test/file.lua") },
-        { id = 2, path = splitPath("/home/rosa/project/exam/file.lua") },
+        { id = 1, path = { "", "home", "agua", "project", "test", "file.lua" } },
+        { id = 2, path = { "", "home", "rosa", "project", "exam", "file.lua" } },
       }
 
       local result = name_parser.parseBuffers(buffers)
@@ -73,8 +70,8 @@ describe("Name Parser Module", function()
 
     it("should resolve conflict when one file has shorter path (Example 4)", function()
       local buffers = {
-        { id = 1, path = splitPath("/home/file.lua") },
-        { id = 2, path = splitPath("/home/rosa/file.lua") },
+        { id = 1, path = { "", "home", "file.lua" } },
+        { id = 2, path = { "", "home", "rosa", "file.lua" } },
       }
 
       local result = name_parser.parseBuffers(buffers)
@@ -87,9 +84,9 @@ describe("Name Parser Module", function()
 
     it("should resolve conflict for 3 files with unique directory component (Example 5.1)", function()
       local buffers = {
-        { id = 1, path = splitPath("/home/agua/project/test/file.lua") },
-        { id = 2, path = splitPath("/home/rosa/project/exam/file.lua") },
-        { id = 3, path = splitPath("/home/pata/project/exam/file.lua") },
+        { id = 1, path = { "", "home", "agua", "project", "test", "file.lua" } },
+        { id = 2, path = { "", "home", "rosa", "project", "exam", "file.lua" } },
+        { id = 3, path = { "", "home", "pata", "project", "exam", "file.lua" } },
       }
 
       local result = name_parser.parseBuffers(buffers)
@@ -103,9 +100,9 @@ describe("Name Parser Module", function()
 
     it("should resolve conflict for 3 files with branching directories (Example 5.2)", function()
       local buffers = {
-        { id = 1, path = splitPath("/home/agua/project/test/file.lua") },
-        { id = 2, path = splitPath("/home/rosa/git/exam/file.lua") },
-        { id = 3, path = splitPath("/home/rosa/scm/exam/file.lua") },
+        { id = 1, path = { "", "home", "agua", "project", "test", "file.lua" } },
+        { id = 2, path = { "", "home", "rosa", "git", "exam", "file.lua" } },
+        { id = 3, path = { "", "home", "rosa", "scm", "exam", "file.lua" } },
       }
 
       local result = name_parser.parseBuffers(buffers)
