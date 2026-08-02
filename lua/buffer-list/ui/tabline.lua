@@ -50,6 +50,126 @@ local function format_last_item(name, rem)
   return string.rep(" ", left_len) .. name .. string.rep(" ", right_len)
 end
 
+--- Format a buffer item truncated on the left when preceding hidden buffers exist
+--- @param name string
+--- @param rem number
+--- @return string
+local function format_left_truncated_item(name, rem)
+  if rem <= 3 then
+    return string.rep(".", rem)
+  end
+
+  local extra = rem - 3
+  if extra <= #name then
+    return "..." .. name:sub(#name - extra + 1)
+  end
+
+  local total_pad = extra - #name
+  local right_pad_len = math.min(3, total_pad)
+  local left_pad_len = total_pad - right_pad_len
+  return "..." .. string.rep(" ", left_pad_len) .. name .. string.rep(" ", right_pad_len)
+end
+
+--- Format the first buffer item in the window when truncated on the left to rem width
+--- @param name string
+--- @param rem number
+--- @return string
+local function format_first_item(name, rem)
+  if rem <= #name then
+    return name:sub(#name - rem + 1)
+  end
+
+  local extra = rem - #name
+  local left_pad_table = { [0] = 0, [1] = 1, [2] = 1, [3] = 2, [4] = 2, [5] = 3, [6] = 3 }
+  local right_pad_table = { [0] = 0, [1] = 0, [2] = 1, [3] = 1, [4] = 2, [5] = 2, [6] = 3 }
+
+  local left_len = left_pad_table[math.min(6, extra)] or 3
+  local right_len = right_pad_table[math.min(6, extra)] or 3
+
+  return string.rep(" ", left_len) .. name .. string.rep(" ", right_len)
+end
+
+--- Generate left-aligned tabline (forward pass)
+local function generate_left_aligned_tabline(active_id, buffers, full_widths, max_width)
+  local total_buffers = #buffers
+  local start_idx = saved_start_idx
+  local parts = {}
+  local rem_width = max_width
+
+  for i = start_idx, total_buffers do
+    if rem_width <= 0 then
+      break
+    end
+
+    local buf = buffers[i]
+    local hl = (buf.id == active_id) and config.hl_active_item or config.hl_inactive_item
+    local full_w = full_widths[i]
+
+    if rem_width >= full_w then
+      if i > start_idx and i < total_buffers and (rem_width - full_w < 4) then
+        local item_str = format_right_truncated_item(buf.name, rem_width)
+        table.insert(parts, hl .. item_str)
+        break
+      else
+        table.insert(parts, hl .. PAD .. buf.name .. PAD)
+        rem_width = rem_width - full_w
+      end
+    else
+      local item_str
+      if i < total_buffers then
+        item_str = format_right_truncated_item(buf.name, rem_width)
+      else
+        item_str = format_last_item(buf.name, rem_width)
+      end
+      table.insert(parts, hl .. item_str)
+      break
+    end
+  end
+
+  table.insert(parts, config.hl_autofill)
+  return table.concat(parts, "")
+end
+
+--- Generate right-aligned tabline (backward pass)
+local function generate_right_aligned_tabline(active_id, buffers, full_widths, max_width)
+  local total_buffers = #buffers
+  local parts = {}
+  local rem_width = max_width
+
+  for i = total_buffers, 1, -1 do
+    if rem_width <= 0 then
+      break
+    end
+
+    local buf = buffers[i]
+    local hl = (buf.id == active_id) and config.hl_active_item or config.hl_inactive_item
+    local full_w = full_widths[i]
+
+    if rem_width >= full_w then
+      if i < total_buffers and i > 1 and (rem_width - full_w < 4) then
+        local item_str = format_left_truncated_item(buf.name, rem_width)
+        table.insert(parts, 1, hl .. item_str)
+        break
+      else
+        table.insert(parts, 1, hl .. PAD .. buf.name .. PAD)
+        rem_width = rem_width - full_w
+      end
+    else
+      local item_str
+      if i > 1 then
+        item_str = format_left_truncated_item(buf.name, rem_width)
+      else
+        item_str = format_first_item(buf.name, rem_width)
+      end
+      table.insert(parts, 1, hl .. item_str)
+      break
+    end
+  end
+
+  table.insert(parts, config.hl_autofill)
+  return table.concat(parts, "")
+end
+
 --- Generate the tabline string
 --- @param active_id number
 --- @param buffers { id: number, name: string }[]
@@ -89,53 +209,11 @@ function M.generateTabline(active_id, buffers, max_width)
     end
   end
 
-  if saved_start_idx > total_buffers then
-    saved_start_idx = total_buffers
+  if active_index == total_buffers then
+    return generate_right_aligned_tabline(active_id, buffers, full_widths, max_width)
+  else
+    return generate_left_aligned_tabline(active_id, buffers, full_widths, max_width)
   end
-  if saved_start_idx < 1 then
-    saved_start_idx = 1
-  end
-
-  if active_index < saved_start_idx then
-    saved_start_idx = active_index
-  end
-
-  local start_idx = saved_start_idx
-  local parts = {}
-  local rem_width = max_width
-
-  for i = start_idx, total_buffers do
-    if rem_width <= 0 then
-      break
-    end
-
-    local buf = buffers[i]
-    local hl = (buf.id == active_id) and config.hl_active_item or config.hl_inactive_item
-    local full_w = full_widths[i]
-
-    if rem_width >= full_w then
-      if i > start_idx and i < total_buffers and (rem_width - full_w < 4) then
-        local item_str = format_right_truncated_item(buf.name, rem_width)
-        table.insert(parts, hl .. item_str)
-        break
-      else
-        table.insert(parts, hl .. PAD .. buf.name .. PAD)
-        rem_width = rem_width - full_w
-      end
-    else
-      local item_str
-      if i < total_buffers then
-        item_str = format_right_truncated_item(buf.name, rem_width)
-      else
-        item_str = format_last_item(buf.name, rem_width)
-      end
-      table.insert(parts, hl .. item_str)
-      break
-    end
-  end
-
-  table.insert(parts, config.hl_autofill)
-  return table.concat(parts, "")
 end
 
 return M
