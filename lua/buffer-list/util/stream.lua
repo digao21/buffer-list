@@ -39,7 +39,6 @@ function Stream:mapAll(mapFunc)
   return Stream:new(new_arr)
 end
 
-
 --- Returns the content of the Stream
 --- @return T[]
 function Stream:toArray()

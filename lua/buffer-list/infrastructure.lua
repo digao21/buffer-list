@@ -128,4 +128,10 @@ function M.redraw()
   vim.cmd("redrawtabline")
 end
 
+--- Get total screen width in columns
+--- @return number
+function M.getColumns()
+  return vim.o.columns
+end
+
 return M

@@ -12,18 +12,16 @@ local M = {}
 local function splitBufferPath(buff)
   return {
     id = buff.id,
-    path = infra.splitPath(buff.path)
+    path = infra.splitPath(buff.path),
   }
 end
 
 M.generateTabline = function()
-  local buffers = Stream:new(buffer.getBuffers())
-    :map(splitBufferPath)
-    :mapAll(name_parser.parseBuffers)
-    :toArray()
+  local buffers = Stream:new(buffer.getBuffers()):map(splitBufferPath):mapAll(name_parser.parseBuffers):toArray()
 
   local active_id = buffer.getActive()
-  return tabline.generateTabline(active_id or 0, buffers)
+  local max_width = infra.getColumns()
+  return tabline.generateTabline(active_id or 0, buffers, max_width)
 end
 
 return M
