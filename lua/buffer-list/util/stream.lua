@@ -1,9 +1,8 @@
+--- @class buffer-list.util.Stream<T>
+--- @field arr T[]
 local Stream = {}
 
 Stream.__index = Stream
-
---- @class buffer-list.util.Stream
---- @generic T
 
 --- Creates a new Stream
 --- @generic T
@@ -17,7 +16,7 @@ function Stream:new(arr)
 end
 
 --- Map elements from Stream
---- @generic T,K
+--- @generic K
 --- @param mapFunc fun(item: T): K
 --- @return buffer-list.util.Stream<K>
 function Stream:map(mapFunc)
@@ -30,8 +29,18 @@ function Stream:map(mapFunc)
   return Stream:new(new_arr)
 end
 
+--- Map all elements from Stream at once
+--- @generic K
+--- @param mapFunc fun(item: T[]): K[]
+--- @return buffer-list.util.Stream<K>
+function Stream:mapAll(mapFunc)
+  local new_arr = mapFunc(self:toArray())
+
+  return Stream:new(new_arr)
+end
+
+
 --- Returns the content of the Stream
---- @generic T
 --- @return T[]
 function Stream:toArray()
   local new_arr = {}
