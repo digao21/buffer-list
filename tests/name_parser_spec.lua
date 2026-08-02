@@ -113,5 +113,37 @@ describe("Name Parser Module", function()
         { id = 3, name = "rosa/scm/file.lua" },
       })
     end)
+
+    it("should handle empty prefix", function()
+      local buffers = {
+        { id = 1, path = { "file.lua" } },
+        { id = 2, path = { "test", "file.lua" } },
+      }
+
+      local result = name_parser.parseBuffers(buffers)
+
+      assert.are.same(result, {
+        { id = 1, name = "file.lua" },
+        { id = 2, name = "test/file.lua" },
+      })
+    end)
+
+    it("should handle repeated files", function()
+      local buffers = {
+        { id = 1, path = { "file.lua" } },
+        { id = 2, path = { "file.lua" } },
+        { id = 3, path = { "test", "file.lua" } },
+        { id = 4, path = { "test", "file.lua" } },
+      }
+
+      local result = name_parser.parseBuffers(buffers)
+
+      assert.are.same(result, {
+        { id = 1, name = "file.lua" },
+        { id = 2, name = "file.lua" },
+        { id = 3, name = "test/file.lua" },
+        { id = 4, name = "test/file.lua" },
+      })
+    end)
   end)
 end)
