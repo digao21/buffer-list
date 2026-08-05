@@ -49,6 +49,10 @@ local fillLeft
 fillRight = function(active_id, buffers, max_width)
   local active_buffer_idx = getActiveBufferIndex(active_id, buffers)
 
+  if saved_start_idx > #buffers then
+    saved_start_idx = #buffers
+  end
+
   if active_buffer_idx ~= nil and active_buffer_idx < saved_start_idx then
     saved_start_idx = active_buffer_idx
   end
@@ -161,6 +165,10 @@ end
 fillLeft = function(active_id, buffers, max_width)
   local active_buffer_idx = getActiveBufferIndex(active_id, buffers)
 
+  if saved_start_idx > #buffers then
+    saved_start_idx = #buffers
+  end
+
   if active_buffer_idx ~= nil and saved_start_idx < active_buffer_idx then
     saved_start_idx = active_buffer_idx
   end
@@ -177,7 +185,7 @@ fillLeft = function(active_id, buffers, max_width)
 
   if i <= 0 then
     if saved_start_idx < #buffers then
-      new_buffers[#new_buffers].rt_pad = "..."
+      new_buffers[1].rt_pad = "..."
     end
 
     return revert(new_buffers)
