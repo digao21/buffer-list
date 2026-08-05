@@ -4,170 +4,241 @@ local PAD = string.rep(" ", 3)
 
 local M = {}
 
+--- @type number
 local saved_start_idx = 1
+
+--- @type boolean
+local fill_right = true
 
 --- Reset sliding window state
 function M.resetWindow()
   saved_start_idx = 1
 end
 
---- Format a buffer item truncated on the right when followed by hidden buffers
---- @param name string
---- @param rem number
---- @return string
-local function format_right_truncated_item(name, rem)
-  if rem <= 3 then
-    return string.rep(".", rem)
+local function revert(arr)
+  local new_arr = {}
+
+  for i=#arr, 1, -1 do
+    table.insert(new_arr, arr[i])
   end
 
-  local extra = rem - 3
-  if extra <= #name then
-    return name:sub(1, extra) .. "..."
-  end
-
-  local total_pad = extra - #name
-  local left_pad_len = math.min(3, total_pad)
-  local right_pad_len = total_pad - left_pad_len
-  return string.rep(" ", left_pad_len) .. name .. string.rep(" ", right_pad_len) .. "..."
+  return new_arr
 end
 
---- Format the last buffer item in the window when truncated to rem width
---- @param name string
---- @param rem number
---- @return string
-local function format_last_item(name, rem)
-  if rem <= #name then
-    return name:sub(1, rem)
+--- Returns the index of the active buffer inside buffers array or nil otherwise
+--- @param active_id number
+--- @param buffers { id: number, name: string, lt_pad: string, rt_pad: string }[]
+local function getActiveBufferIndex(active_id, buffers)
+  for idx, buff in ipairs(buffers) do
+    if active_id == buff.id then return idx end
   end
 
-  local extra = rem - #name
-  local left_pad_table = { [0] = 0, [1] = 0, [2] = 1, [3] = 2, [4] = 2, [5] = 3, [6] = 3 }
-  local right_pad_table = { [0] = 0, [1] = 1, [2] = 1, [3] = 1, [4] = 2, [5] = 2, [6] = 3 }
-
-  local left_len = left_pad_table[math.min(6, extra)] or 3
-  local right_len = right_pad_table[math.min(6, extra)] or 3
-
-  return string.rep(" ", left_len) .. name .. string.rep(" ", right_len)
+  return nil
 end
 
---- Format a buffer item truncated on the left when preceding hidden buffers exist
---- @param name string
---- @param rem number
---- @return string
-local function format_left_truncated_item(name, rem)
-  if rem <= 3 then
-    return string.rep(".", rem)
-  end
-
-  local extra = rem - 3
-  if extra <= #name then
-    return "..." .. name:sub(#name - extra + 1)
-  end
-
-  local total_pad = extra - #name
-  local right_pad_len = math.min(3, total_pad)
-  local left_pad_len = total_pad - right_pad_len
-  return "..." .. string.rep(" ", left_pad_len) .. name .. string.rep(" ", right_pad_len)
+--- @param buffer { id: number, name: string, lt_pad: string, rt_pad: string }
+local function getBufferLength(buffer)
+  return #(buffer.name) + #(buffer.lt_pad) + #(buffer.rt_pad)
 end
 
---- Format the first buffer item in the window when truncated on the left to rem width
---- @param name string
---- @param rem number
---- @return string
-local function format_first_item(name, rem)
-  if rem <= #name then
-    return name:sub(#name - rem + 1)
+local fillRight
+local fillLeft
+
+fillRight = function(active_id, buffers, max_width)
+  local active_buffer_idx = getActiveBufferIndex(active_id, buffers)
+
+  if active_buffer_idx ~= nil and active_buffer_idx < saved_start_idx then
+    saved_start_idx = active_buffer_idx
   end
 
-  local extra = rem - #name
-  local left_pad_table = { [0] = 0, [1] = 1, [2] = 1, [3] = 2, [4] = 2, [5] = 3, [6] = 3 }
-  local right_pad_table = { [0] = 0, [1] = 0, [2] = 1, [3] = 1, [4] = 2, [5] = 2, [6] = 3 }
+  local i = saved_start_idx
+  local new_buffers = {}
+  local tab_size = 0
 
-  local left_len = left_pad_table[math.min(6, extra)] or 3
-  local right_len = right_pad_table[math.min(6, extra)] or 3
+  while i <= #buffers and tab_size + getBufferLength(buffers[i]) <= max_width do
+    tab_size = tab_size + getBufferLength(buffers[i])
+    table.insert(new_buffers, buffers[i])
+    i = i+1
+  end
 
-  return string.rep(" ", left_len) .. name .. string.rep(" ", right_len)
-end
-
---- Generate left-aligned tabline (forward pass)
-local function generate_left_aligned_tabline(active_id, buffers, full_widths, max_width)
-  local total_buffers = #buffers
-  local start_idx = saved_start_idx
-  local parts = {}
-  local rem_width = max_width
-
-  for i = start_idx, total_buffers do
-    if rem_width <= 0 then
-      break
+  if i > #buffers then
+    if saved_start_idx > 1 then
+      new_buffers[1].lt_pad = "..."
     end
 
-    local buf = buffers[i]
-    local hl = (buf.id == active_id) and config.hl_active_item or config.hl_inactive_item
-    local full_w = full_widths[i]
+    return new_buffers
+  end
 
-    if rem_width >= full_w then
-      if i > start_idx and i < total_buffers and (rem_width - full_w < 4) then
-        local item_str = format_right_truncated_item(buf.name, rem_width)
-        table.insert(parts, hl .. item_str)
-        break
-      else
-        table.insert(parts, hl .. PAD .. buf.name .. PAD)
-        rem_width = rem_width - full_w
-      end
+  if #new_buffers == 0 then
+    local idx = active_buffer_idx or (buffers[saved_start_idx] and saved_start_idx or 1)
+    local new_buff = {
+      id = buffers[idx].id,
+      lt_pad = "",
+      rt_pad = ""
+    }
+
+    if max_width <= 3 then
+      new_buff.name = string.sub(buffers[idx].name, 1, max_width)
     else
-      local item_str
-      if i < total_buffers then
-        item_str = format_right_truncated_item(buf.name, rem_width)
-      else
-        item_str = format_last_item(buf.name, rem_width)
-      end
-      table.insert(parts, hl .. item_str)
-      break
+      new_buff.name = string.sub(buffers[idx].name, 1, max_width-3) .. "..."
     end
+
+    return { new_buff }
   end
 
-  table.insert(parts, config.hl_autofill)
-  return table.concat(parts, "")
+  if active_buffer_idx == nil or i > active_buffer_idx then
+    -- No need to slide
+    -- And we have extra files to the right
+    if saved_start_idx > 1 then
+      new_buffers[1].lt_pad = "..."
+    end
+
+    if max_width - tab_size <= 3 then
+      new_buffers[#new_buffers].rt_pad = string.rep(" ", max_width - tab_size) .. "..."
+      return new_buffers
+    end
+
+    if tab_size + getBufferLength(buffers[i]) - max_width <= 3 then
+      buffers[i].lt_pad = string.rep(" ", 3 - (tab_size + getBufferLength(buffers[i]) - max_width))
+
+      if i < #buffers then
+        buffers[i].rt_pad = "..."
+      end
+
+      table.insert(new_buffers, buffers[i])
+      return new_buffers
+    end
+
+    local spaces_to_remove = tab_size + getBufferLength(buffers[i]) - max_width
+
+    buffers[i].lt_pad = ""
+    spaces_to_remove = spaces_to_remove - 3
+
+    buffers[i].rt_pad = ""
+    local name = buffers[i].name .. "..."
+
+    name = string.sub(name, 1, #name - spaces_to_remove)
+    name = string.sub(name, 1, #name - 3) .. "..."
+
+    buffers[i].name = name
+
+    table.insert(new_buffers, buffers[i])
+    return new_buffers
+  end
+
+  -- Slide .:|:.
+  saved_start_idx = active_buffer_idx
+  fill_right = false
+  return fillLeft(active_id, buffers, max_width)
 end
 
---- Generate right-aligned tabline (backward pass)
-local function generate_right_aligned_tabline(active_id, buffers, full_widths, max_width)
-  local total_buffers = #buffers
-  local parts = {}
-  local rem_width = max_width
+--- Return truncated buffers ready to print
+--- @param active_id number
+--- @param buffers { id: number, name: string, lt_pad: string, rt_pad: string }[]
+--- @param max_width number
+fillLeft = function(active_id, buffers, max_width)
+  local active_buffer_idx = getActiveBufferIndex(active_id, buffers)
 
-  for i = total_buffers, 1, -1 do
-    if rem_width <= 0 then
-      break
-    end
-
-    local buf = buffers[i]
-    local hl = (buf.id == active_id) and config.hl_active_item or config.hl_inactive_item
-    local full_w = full_widths[i]
-
-    if rem_width >= full_w then
-      if i < total_buffers and i > 1 and (rem_width - full_w < 4) then
-        local item_str = format_left_truncated_item(buf.name, rem_width)
-        table.insert(parts, 1, hl .. item_str)
-        break
-      else
-        table.insert(parts, 1, hl .. PAD .. buf.name .. PAD)
-        rem_width = rem_width - full_w
-      end
-    else
-      local item_str
-      if i > 1 then
-        item_str = format_left_truncated_item(buf.name, rem_width)
-      else
-        item_str = format_first_item(buf.name, rem_width)
-      end
-      table.insert(parts, 1, hl .. item_str)
-      break
-    end
+  if active_buffer_idx ~= nil and saved_start_idx < active_buffer_idx then
+    saved_start_idx = active_buffer_idx
   end
 
-  table.insert(parts, config.hl_autofill)
-  return table.concat(parts, "")
+  local i = saved_start_idx
+  local new_buffers = {}
+  local tab_size = 0
+
+  while 0 < i and tab_size + getBufferLength(buffers[i]) <= max_width do
+    tab_size = tab_size + getBufferLength(buffers[i])
+    table.insert(new_buffers, buffers[i])
+    i = i-1
+  end
+
+  if i <= 0 then
+    if saved_start_idx < #buffers then
+      new_buffers[#new_buffers].rt_pad = "..."
+    end
+
+    return revert(new_buffers)
+  end
+
+  if #new_buffers == 0 then
+    local idx = active_buffer_idx or (buffers[saved_start_idx] and saved_start_idx or 1)
+    local new_buff = {
+      id = buffers[idx].id,
+      lt_pad = "",
+      rt_pad = ""
+    }
+
+    if max_width <= 3 then
+      new_buff.name = string.sub(buffers[idx].name, 1, max_width)
+    else
+      new_buff.name = "..." .. string.sub(buffers[idx].name, 1, max_width-3)
+    end
+
+    return { new_buff }
+  end
+
+  if active_buffer_idx == nil or i < active_buffer_idx then
+    -- No need to slide
+    -- And we have extra files to the left
+    if saved_start_idx < #buffers then
+      new_buffers[1].rt_pad = "..."
+    end
+
+    if max_width - tab_size <= 3 then
+      new_buffers[#new_buffers].lt_pad = "..." .. string.rep(" ", max_width - tab_size)
+      return revert(new_buffers)
+    end
+
+    if tab_size + getBufferLength(buffers[i]) - max_width <= 3 then
+      buffers[i].rt_pad = string.rep(" ", 3 - (tab_size + getBufferLength(buffers[i]) - max_width))
+
+      if 1 < i then
+        buffers[i].lt_pad = "..."
+      end
+
+      table.insert(new_buffers, buffers[i])
+      return revert(new_buffers)
+    end
+
+    local spaces_to_remove = tab_size + getBufferLength(buffers[i]) - max_width
+
+    buffers[i].rt_pad = ""
+    spaces_to_remove = spaces_to_remove - 3
+
+    buffers[i].lt_pad = ""
+    local name = "..." .. buffers[i].name
+
+    name = string.sub(name, spaces_to_remove + 1)
+    name = "..." .. string.sub(name, 4)
+
+    buffers[i].name = name
+
+    table.insert(new_buffers, buffers[i])
+    return revert(new_buffers)
+  end
+
+  -- Slide .:|:.
+  saved_start_idx = active_buffer_idx
+  fill_right = true
+  return fillRight(active_id, buffers, max_width)
+end
+
+--- Add padding to buffers
+--- @param buffers { id: number, name: string }[]
+--- @return { id: number, name: string, lt_pad: string, rt_pad: string }[]
+local function addPad(buffers)
+  local new_buffers = {}
+  for _, buff in ipairs(buffers) do
+    table.insert(new_buffers, {
+      id = buff.id,
+      name = buff.name,
+      lt_pad = PAD,
+      rt_pad = PAD
+    })
+  end
+
+  return new_buffers
 end
 
 --- Generate the tabline string
@@ -176,44 +247,29 @@ end
 --- @param max_width? number
 --- @return string
 function M.generateTabline(active_id, buffers, max_width)
-  if #buffers == 0 then
-    return config.hl_autofill
-  end
+  local buffers_with_pad = addPad(buffers)
+  local truncated_buffers = buffers_with_pad
 
-  local total_buffers = #buffers
-  local full_widths = {}
-  local total_width = 0
-
-  for i, buf in ipairs(buffers) do
-    local w = #buf.name + 6
-    full_widths[i] = w
-    total_width = total_width + w
-  end
-
-  if not max_width or max_width <= 0 or total_width <= max_width then
-    saved_start_idx = 1
-    local parts = {}
-    for _, buf in ipairs(buffers) do
-      local hl = (buf.id == active_id) and config.hl_active_item or config.hl_inactive_item
-      table.insert(parts, hl .. PAD .. buf.name .. PAD)
-    end
-    table.insert(parts, config.hl_autofill)
-    return table.concat(parts, "")
-  end
-
-  local active_index = 1
-  for i, buf in ipairs(buffers) do
-    if buf.id == active_id then
-      active_index = i
-      break
+  if max_width ~= nil and #buffers > 0 then
+    if fill_right then
+      truncated_buffers = fillRight(active_id, buffers_with_pad, max_width)
+    else
+      truncated_buffers = fillLeft(active_id, buffers_with_pad, max_width)
     end
   end
 
-  if active_index == total_buffers then
-    return generate_right_aligned_tabline(active_id, buffers, full_widths, max_width)
-  else
-    return generate_left_aligned_tabline(active_id, buffers, full_widths, max_width)
+  local tabline = {}
+  for _, buff in ipairs(truncated_buffers) do
+    local hl = (buff.id == active_id) and config.hl_active_item or config.hl_inactive_item
+
+    table.insert(tabline, hl)
+    table.insert(tabline, buff.lt_pad)
+    table.insert(tabline, buff.name)
+    table.insert(tabline, buff.rt_pad)
   end
+
+  table.insert(tabline, config.hl_autofill)
+  return table.concat(tabline, "")
 end
 
 return M
