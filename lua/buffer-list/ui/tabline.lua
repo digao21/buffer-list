@@ -1,5 +1,7 @@
 local config = require("buffer-list.config")
 
+--- The truncate logic depends on PAD has 3 spaces...
+--- If you ever update this, update the logic to be independent from this value.
 local PAD = string.rep(" ", 3)
 
 local M = {}
@@ -27,7 +29,7 @@ end
 
 --- Returns the index of the active buffer inside buffers array or nil otherwise
 --- @param active_id number
---- @param buffers { id: number, name: string, lt_pad: string, rt_pad: string }[]
+--- @param buffers { id: number }[]
 local function getActiveBufferIndex(active_id, buffers)
   for idx, buff in ipairs(buffers) do
     if active_id == buff.id then return idx end
@@ -77,10 +79,30 @@ fillRight = function(active_id, buffers, max_width)
       rt_pad = ""
     }
 
-    if max_width <= 3 then
-      new_buff.name = string.sub(buffers[idx].name, 1, max_width)
+    if #(buffers[idx].name) <= max_width then
+      new_buff.name = buffers[idx].name
+
+      local missing_space = max_width - #(new_buff.name)
+      local space_left = math.floor(missing_space / 2)
+      local space_right = missing_space - space_left
+
+      if 1 < idx then
+        new_buff.lt_pad = string.rep(".", space_left)
+      else
+        new_buff.lt_pad = string.rep(" ", space_left)
+      end
+
+      if idx < #buffers then
+        new_buff.rt_pad = string.rep(".", space_right)
+      else
+        new_buff.rt_pad = string.rep(" ", space_right)
+      end
     else
-      new_buff.name = string.sub(buffers[idx].name, 1, max_width-3) .. "..."
+      if max_width <= 3 then
+        new_buff.name = string.sub(buffers[idx].name, 1, max_width)
+      else
+        new_buff.name = string.sub(buffers[idx].name, 1, max_width-3) .. "..."
+      end
     end
 
     return { new_buff }
@@ -169,10 +191,30 @@ fillLeft = function(active_id, buffers, max_width)
       rt_pad = ""
     }
 
-    if max_width <= 3 then
-      new_buff.name = string.sub(buffers[idx].name, 1, max_width)
+    if #(buffers[idx].name) <= max_width then
+      new_buff.name = buffers[idx].name
+
+      local missing_space = max_width - #(new_buff.name)
+      local space_left = math.floor(missing_space / 2)
+      local space_right = missing_space - space_left
+
+      if 1 < idx then
+        new_buff.lt_pad = string.rep(".", space_left)
+      else
+        new_buff.lt_pad = string.rep(" ", space_left)
+      end
+
+      if idx < #buffers then
+        new_buff.rt_pad = string.rep(".", space_right)
+      else
+        new_buff.rt_pad = string.rep(" ", space_right)
+      end
     else
-      new_buff.name = "..." .. string.sub(buffers[idx].name, 1, max_width-3)
+      if max_width <= 3 then
+        new_buff.name = string.sub(buffers[idx].name, 1, max_width)
+      else
+        new_buff.name = string.sub(buffers[idx].name, 1, max_width-3) .. "..."
+      end
     end
 
     return { new_buff }
@@ -250,7 +292,7 @@ function M.generateTabline(active_id, buffers, max_width)
   local buffers_with_pad = addPad(buffers)
   local truncated_buffers = buffers_with_pad
 
-  if max_width ~= nil and #buffers > 0 then
+  if max_width ~= nil and #buffers_with_pad > 0 then
     if fill_right then
       truncated_buffers = fillRight(active_id, buffers_with_pad, max_width)
     else
