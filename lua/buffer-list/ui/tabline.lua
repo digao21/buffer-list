@@ -20,7 +20,7 @@ end
 local function revert(arr)
   local new_arr = {}
 
-  for i=#arr, 1, -1 do
+  for i = #arr, 1, -1 do
     table.insert(new_arr, arr[i])
   end
 
@@ -32,7 +32,9 @@ end
 --- @param buffers { id: number }[]
 local function getActiveBufferIndex(active_id, buffers)
   for idx, buff in ipairs(buffers) do
-    if active_id == buff.id then return idx end
+    if active_id == buff.id then
+      return idx
+    end
   end
 
   return nil
@@ -40,7 +42,7 @@ end
 
 --- @param buffer { id: number, name: string, lt_pad: string, rt_pad: string }
 local function getBufferLength(buffer)
-  return #(buffer.name) + #(buffer.lt_pad) + #(buffer.rt_pad)
+  return #buffer.name + #buffer.lt_pad + #buffer.rt_pad
 end
 
 local fillRight
@@ -64,7 +66,7 @@ fillRight = function(active_id, buffers, max_width)
   while i <= #buffers and tab_size + getBufferLength(buffers[i]) <= max_width do
     tab_size = tab_size + getBufferLength(buffers[i])
     table.insert(new_buffers, buffers[i])
-    i = i+1
+    i = i + 1
   end
 
   if i > #buffers then
@@ -80,13 +82,13 @@ fillRight = function(active_id, buffers, max_width)
     local new_buff = {
       id = buffers[idx].id,
       lt_pad = "",
-      rt_pad = ""
+      rt_pad = "",
     }
 
-    if #(buffers[idx].name) <= max_width then
+    if #buffers[idx].name <= max_width then
       new_buff.name = buffers[idx].name
 
-      local missing_space = max_width - #(new_buff.name)
+      local missing_space = max_width - #new_buff.name
       local space_left = math.floor(missing_space / 2)
       local space_right = missing_space - space_left
 
@@ -105,7 +107,7 @@ fillRight = function(active_id, buffers, max_width)
       if max_width <= 3 then
         new_buff.name = string.sub(buffers[idx].name, 1, max_width)
       else
-        new_buff.name = string.sub(buffers[idx].name, 1, max_width-3) .. "..."
+        new_buff.name = string.sub(buffers[idx].name, 1, max_width - 3) .. "..."
       end
     end
 
@@ -180,7 +182,7 @@ fillLeft = function(active_id, buffers, max_width)
   while 0 < i and tab_size + getBufferLength(buffers[i]) <= max_width do
     tab_size = tab_size + getBufferLength(buffers[i])
     table.insert(new_buffers, buffers[i])
-    i = i-1
+    i = i - 1
   end
 
   if i <= 0 then
@@ -196,13 +198,13 @@ fillLeft = function(active_id, buffers, max_width)
     local new_buff = {
       id = buffers[idx].id,
       lt_pad = "",
-      rt_pad = ""
+      rt_pad = "",
     }
 
-    if #(buffers[idx].name) <= max_width then
+    if #buffers[idx].name <= max_width then
       new_buff.name = buffers[idx].name
 
-      local missing_space = max_width - #(new_buff.name)
+      local missing_space = max_width - #new_buff.name
       local space_left = math.floor(missing_space / 2)
       local space_right = missing_space - space_left
 
@@ -221,7 +223,7 @@ fillLeft = function(active_id, buffers, max_width)
       if max_width <= 3 then
         new_buff.name = string.sub(buffers[idx].name, 1, max_width)
       else
-        new_buff.name = string.sub(buffers[idx].name, 1, max_width-3) .. "..."
+        new_buff.name = string.sub(buffers[idx].name, 1, max_width - 3) .. "..."
       end
     end
 
@@ -284,7 +286,7 @@ local function addPad(buffers)
       id = buff.id,
       name = buff.name,
       lt_pad = PAD,
-      rt_pad = PAD
+      rt_pad = PAD,
     })
   end
 

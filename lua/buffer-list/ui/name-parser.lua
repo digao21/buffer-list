@@ -1,6 +1,16 @@
 local config = require("buffer-list.config")
 
+local icons_loaded, devicons = pcall(require, "nvim-web-devicons")
+
 local M = {}
+
+local function getIcon(name)
+  if icons_loaded and devicons then
+    return devicons.get_icon(name) or ""
+  end
+
+  return ""
+end
 
 --- Recursively resolve filename conflict for a group of items with the same filename.
 --- @param items table[] List of item tables with { filename, dirs }
@@ -108,6 +118,7 @@ M.parseBuffers = function(buffers)
       id = buff.id,
       path = buff.path,
       filename = filename,
+      icon = getIcon(filename),
       dirs = dirs,
       name = nil,
     }
@@ -140,7 +151,13 @@ M.parseBuffers = function(buffers)
 
   local parsed_buffers = {}
   for _, item in ipairs(items) do
-    table.insert(parsed_buffers, { id = item.id, name = item.name })
+    local name = item.name
+
+    if item.icon and item.icon ~= "" then
+      name = item.icon .. " " .. name
+    end
+
+    table.insert(parsed_buffers, { id = item.id, name = name })
   end
 
   return parsed_buffers
